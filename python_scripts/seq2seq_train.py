@@ -57,33 +57,6 @@ def normalise_string(string):
     string = string.strip()
     return string
 
-def custom_loss(output, target):
-    n_element = output.numel()
-
-    # MSE
-    l1_loss = F.l1_loss(output, target)
-    l1_loss *= 5
-
-    # continuous motion
-    diff = [abs(output[:, n] - output[:, n - 1]) for n in range(1, output.shape[1])]
-    cont_loss = torch.sum(torch.stack(diff)) / n_element
-    cont_loss *= 0.1
-
-    # motion variance
-    norm = torch.norm(output, 2, 1)
-    var_loss = -torch.sum(norm) / n_element
-    var_loss *= 0.5
-
-    l = l1_loss + cont_loss + var_loss
-
-    # inspect loss terms
-    global loss_i
-    if loss_i == 100:
-        loss_i = 0
-    loss_i += 1
-
-    return l
-
 num_epochs = 19
 batch_size = 1
 
@@ -109,8 +82,6 @@ seq2seq = Seq2Seq(encoder, decoder, hidden_size, device).to(device).float()
 loss_fn = nn.MSELoss().to(device).float()
 
 optimiser = optim.Adam(seq2seq.parameters(), lr=0.001, betas=(0.5, 0.8))
-
-loss_i = 0
 
 if load_model:
     seq2seq.load_state_dict(torch.load("./model_gru_arm1.pt"))
